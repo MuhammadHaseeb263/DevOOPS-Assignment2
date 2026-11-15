@@ -1,0 +1,853 @@
+/* =====================================================================
+   Readers’ Haven Public Library: shared stylesheet
+   ---------------------------------------------------------------------
+   Cascade layers, lowest to highest priority:
+     reset → tokens → base → layout → components → pages
+
+   TEAM RULE (keeps merge conflicts small):
+     • The Team Lead owns reset, tokens, base, layout and components.
+     • Each member edits ONLY their own block inside @layer pages
+       (look for the "PAGE:" banners near the bottom of this file).
+     • Every page block contains at least one @media query.
+   ===================================================================== */
+
+@layer reset, tokens, base, layout, components, pages;
+
+/* Cross-document view transitions: smooth page-to-page navigation
+   in browsers that support it, ignored everywhere else. */
+@view-transition {
+  navigation: auto;
+}
+
+/* ===================================================================
+   RESET
+   =================================================================== */
+@layer reset {
+  *,
+  *::before,
+  *::after { box-sizing: border-box; }
+  * { margin: 0; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  img, svg { display: block; max-inline-size: 100%; }
+  input, textarea, button, select { font: inherit; color: inherit; }
+}
+
+/* ===================================================================
+   DESIGN TOKENS
+   =================================================================== */
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* Surface and text */
+    --paper:    #f1f5f3;
+    --surface:  #ffffff;
+    --ink:      #13232b;
+    --muted:    #4b5f68;
+    --deep:     #0f3a43;   /* hero and footer background */
+    --brand:    #17505b;
+    --on-brand: #ffffff;
+    --link:     #17505b;
+    --accent:   #e2a72e;
+    --focus:    #2f5fd0;
+    --danger:   #b3261e;
+    --line:     color-mix(in srgb, var(--ink) 14%, transparent);
+
+    /* Book-spine colours: each inner page owns one of them */
+    --spine-teal:  #1f7a82;
+    --spine-gold:  #e2a72e;
+    --spine-rose:  #b8466b;
+    --spine-blue:  #3f62c8;
+    --spine-green: #4f8a3f;
+
+    /* Fluid type scale (no breakpoints needed) */
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body:    "Figtree", "Segoe UI", system-ui, sans-serif;
+    --step--1: clamp(0.85rem, 0.82rem + 0.15vw, 0.95rem);
+    --step-0:  clamp(1rem,    0.96rem + 0.2vw,  1.125rem);
+    --step-1:  clamp(1.2rem,  1.1rem + 0.5vw,   1.5rem);
+    --step-2:  clamp(1.5rem,  1.3rem + 1vw,     2.1rem);
+    --step-3:  clamp(2rem,    1.5rem + 2.4vw,   3.2rem);
+    --step-4:  clamp(2.6rem,  1.6rem + 4.6vw,   5rem);
+
+    /* Space, shape, depth */
+    --space:    clamp(1rem, 0.8rem + 1vw, 1.75rem);
+    --radius:   0.9rem;
+    --radius-s: 0.45rem;
+    --shadow:
+      0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent),
+      0 14px 28px -16px color-mix(in srgb, var(--ink) 35%, transparent);
+  }
+
+  /* Automatic dark mode */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:    #0d1a1f;
+      --surface:  #14252c;
+      --ink:      #e4edef;
+      --muted:    #9db3bb;
+      --deep:     #08262c;
+      --brand:    #6cc0cd;
+      --on-brand: #0b2227;
+      --link:     #86d0db;
+      --focus:    #8fb1ff;
+      --danger:   #f08a82;
+    }
+  }
+}
+
+/* ===================================================================
+   BASE ELEMENTS
+   =================================================================== */
+@layer base {
+  html {
+    scroll-padding-block-start: 5rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--paper);
+    min-block-size: 100dvh;
+    display: grid;
+    grid-template-rows: auto 1fr auto; /* header, main, footer */
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  h1 { font-size: var(--step-4); font-weight: 700; }
+  h2 { font-size: var(--step-3); font-weight: 650; }
+  h3 { font-size: var(--step-1); font-weight: 650; }
+
+  p { text-wrap: pretty; max-inline-size: 65ch; }
+
+  a {
+    color: var(--link);
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 0.08em;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+}
+
+/* ===================================================================
+   LAYOUT HELPERS
+   =================================================================== */
+@layer layout {
+  .wrap {
+    inline-size: min(100% - 2rem, 72rem);
+    margin-inline: auto;
+  }
+
+  .section {
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .stack > * + * { margin-block-start: var(--stack, 1rem); }
+
+  /* Auto-fitting grid: as many columns as will fit, no media query */
+  .grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* ===================================================================
+   SHARED COMPONENTS
+   =================================================================== */
+@layer components {
+
+  /* ---- Skip link (keyboard users) ---- */
+  .skip {
+    position: absolute;
+    inset-inline-start: 1rem;
+    inset-block-start: -5rem;
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    background: var(--brand);
+    color: var(--on-brand);
+    border-radius: var(--radius-s);
+  }
+  .skip:focus { inset-block-start: 1rem; }
+
+  /* ---- Sticky header with frosted glass ---- */
+  .site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--paper) 80%, transparent);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .site-header .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem 1.5rem;
+    padding-block: 0.7rem;
+  }
+
+  /* Reading-progress bar driven by scroll position (no JavaScript) */
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .site-header::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: -1px;
+        block-size: 3px;
+        background: var(--accent);
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+        animation: read-progress linear both;
+        animation-timeline: scroll(root block);
+      }
+    }
+  }
+
+  @keyframes read-progress {
+    to { transform: scaleX(1); }
+  }
+
+  /* ---- Brand mark: three little book spines drawn in pure CSS ---- */
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--step-1);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .brand::before {
+    content: "";
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    background:
+      linear-gradient(var(--spine-blue), var(--spine-blue)) 0 100% / 0.4rem 100% no-repeat,
+      linear-gradient(var(--spine-gold), var(--spine-gold)) 0.55rem 100% / 0.4rem 75% no-repeat,
+      linear-gradient(var(--spine-rose), var(--spine-rose)) 1.1rem 100% / 0.4rem 90% no-repeat;
+  }
+
+  /* ---- Navigation pills ---- */
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .nav a {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: var(--step--1);
+    text-decoration: none;
+    transition: background-color 0.15s;
+  }
+  .nav a:hover {
+    background: color-mix(in srgb, var(--brand) 14%, transparent);
+  }
+  .nav a[aria-current="page"] {
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+
+  /* ---- Buttons ---- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75em 1.35em;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: translate 0.15s, background-color 0.15s;
+  }
+  .btn:hover {
+    translate: 0 -2px;
+    background: color-mix(in srgb, var(--brand) 85%, var(--ink));
+  }
+  .btn.btn-ghost {
+    background: transparent;
+    color: inherit;
+    border-color: currentColor;
+  }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space);
+    box-shadow: var(--shadow);
+  }
+
+  a.card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: translate 0.2s, border-color 0.2s;
+  }
+  a.card:hover {
+    translate: 0 -3px;
+    border-color: var(--brand);
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.15rem 0.7rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #1b1500;
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+
+  /* ---- Inner-page header: colour matches the page's spine on Home ---- */
+  .page-head {
+    background: color-mix(in srgb, var(--c, var(--spine-teal)) 11%, var(--paper));
+    padding-block: clamp(2.5rem, 7vw, 5rem) clamp(1.5rem, 4vw, 2.5rem);
+  }
+  .page-head .head-inner {
+    padding-inline-start: 1.25rem;
+    border-inline-start: 0.6rem solid var(--c, var(--spine-teal));
+  }
+  .page-head .lead {
+    margin-block-start: 1rem;
+    font-size: var(--step-1);
+    color: var(--muted);
+  }
+
+  /* ---- Tables ---- */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  table caption {
+    text-align: start;
+    padding: 0.9rem 1rem 0.4rem;
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-size: var(--step-0);
+  }
+  table :is(th, td) {
+    padding: 0.7rem 1rem;
+    text-align: start;
+    border-block-end: 1px solid var(--line);
+  }
+  table thead th { color: var(--muted); font-weight: 600; }
+  table tbody tr:last-child :is(th, td) { border-block-end: 0; }
+
+  /* ---- Numbered steps: only used where order really matters ---- */
+  .steps {
+    list-style: none;
+    padding: 0;
+    counter-reset: step;
+    display: grid;
+    gap: 0.9rem;
+  }
+  .steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.75rem;
+    align-items: start;
+  }
+  .steps li::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 50%;
+    background: var(--c, var(--brand));
+    color: var(--on, #fff);
+    font-weight: 700;
+    font-size: var(--step--1);
+  }
+
+  /* ---- Expandable questions (native <details>) ---- */
+  details {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    padding: 0.9rem 1.1rem;
+  }
+  details + details { margin-block-start: 0.6rem; }
+  details summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  details[open] summary { margin-block-end: 0.5rem; }
+
+  /* ---- Footer ---- */
+  .site-footer {
+    background: var(--deep);
+    color: #d5e4e7;
+    padding-block: 2.5rem;
+  }
+  .site-footer .foot {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 1.5rem 2rem;
+  }
+  .site-footer .foot-title {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 700;
+    color: #fff;
+  }
+  .site-footer nav { display: grid; gap: 0.3rem; align-content: start; }
+  .site-footer a { color: #bfe3e9; }
+  .site-footer .fine { grid-column: 1 / -1; font-size: var(--step--1); opacity: 0.75; }
+}
+
+/* ===================================================================
+   PAGE-SPECIFIC STYLES
+   One block per page. Edit ONLY your own block.
+   =================================================================== */
+@layer pages {
+
+  /* ================================================================
+     PAGE: HOME (index.html)          Owner: Team Lead
+     Memorable moment: the shelf. Each book spine is a real link.
+     ================================================================ */
+  .hero {
+    background: var(--deep);
+    color: #e6f1f3;
+    padding-block: clamp(2.5rem, 7vw, 5.5rem) 0;
+    overflow: clip;
+  }
+  .hero .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: end;
+  }
+  .hero .hero-copy { padding-block-end: clamp(2rem, 5vw, 4rem); }
+  .hero h1 { color: #fff; }
+  .hero .lead {
+    margin-block: 1.25rem 2rem;
+    font-size: var(--step-1);
+    color: color-mix(in srgb, #fff 82%, transparent);
+  }
+  .hero .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .hero .btn { background: var(--accent); color: #1b1500; }
+  .hero .btn:hover { background: color-mix(in srgb, var(--accent) 85%, #fff); }
+  .hero .btn.btn-ghost {
+    background: transparent;
+    color: #fff;
+    border-color: color-mix(in srgb, #fff 55%, transparent);
+  }
+  .hero .btn.btn-ghost:hover { background: color-mix(in srgb, #fff 12%, transparent); }
+
+  .shelf {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.35rem;
+    padding-inline: 0.5rem;
+    border-block-end: 0.7rem solid color-mix(in srgb, #fff 28%, var(--deep));
+  }
+
+  .spine {
+    --c: var(--spine-teal);
+    --h: 13rem;
+    --w: 3.2rem;
+    inline-size: var(--w);
+    block-size: var(--h);
+    flex: none;
+    display: grid;
+    place-items: center;
+    writing-mode: vertical-rl;
+    background-color: var(--c);
+    /* two thin bands near top and bottom, like a real spine */
+    background-image: linear-gradient(
+      transparent 9%,
+      color-mix(in srgb, #fff 35%, transparent) 9% 11%,
+      transparent 11% 89%,
+      color-mix(in srgb, #fff 35%, transparent) 89% 91%,
+      transparent 91%
+    );
+    color: var(--on, #fff);
+    border-radius: 0.25rem 0.25rem 0 0;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, #000 18%, transparent),
+      inset 0.35rem 0 0 color-mix(in srgb, #fff 12%, transparent);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--step-0);
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transform-origin: bottom center;
+    transition: translate 0.25s ease, rotate 0.25s ease;
+  }
+
+  a.spine:hover,
+  a.spine:focus-visible {
+    translate: 0 -0.8rem;
+    rotate: -2deg;
+  }
+
+  .spine.lean {
+    rotate: 9deg;
+    transform-origin: bottom left;
+    margin-inline: 0.7rem 1rem;
+  }
+
+  /* One orchestrated page-load moment: spines slide up in sequence */
+  @media (prefers-reduced-motion: no-preference) {
+    .spine {
+      animation: spine-in 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+      animation-delay: calc(var(--i, 0) * 80ms + 150ms);
+    }
+  }
+  @keyframes spine-in {
+    from { translate: 0 60%; opacity: 0; }
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+
+  .hours td:last-child { font-weight: 600; white-space: nowrap; }
+
+  .quick h3 { margin-block-end: 0.4rem; }
+  .quick p { color: var(--muted); font-size: var(--step--1); }
+
+  /* HOME: responsive. On phones the standing spines lie down as a stack. */
+  @media (max-width: 48rem) {
+    .hero .hero-grid { grid-template-columns: 1fr; }
+    .hero .hero-copy { padding-block-end: 0; }
+    .shelf { padding-block-start: 2rem; }
+  }
+  @media (max-width: 36rem) {
+    .shelf {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.4rem;
+      border-block-end: 0;
+      padding-block-end: 2rem;
+    }
+    .spine {
+      inline-size: auto;
+      block-size: 3.2rem;
+      writing-mode: horizontal-tb;
+      justify-items: start;
+      padding-inline: 1.25rem;
+      border-radius: 0.3rem;
+    }
+    .spine[aria-hidden="true"] { display: none; }
+    a.spine:hover, a.spine:focus-visible { translate: 0.5rem 0; rotate: 0deg; }
+  }
+
+  /* ================================================================
+     PAGE: COLLECTIONS (collections.html)     Owner: Member 1
+     CSS-only category filter built with :has() and radio buttons.
+     ================================================================ */
+  .shelf-filter { position: relative; }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-end: var(--space);
+    padding: 0;
+    border: 0;
+  }
+  .filter-bar input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .filter-bar label {
+    padding: 0.45rem 1.1rem;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .filter-bar label:hover { background: color-mix(in srgb, var(--brand) 12%, var(--surface)); }
+  .filter-bar input:checked + label {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
+  .filter-bar input:focus-visible + label {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .shelf-filter:has(#cat-fiction:checked)    .cat:not(.cat-fiction),
+  .shelf-filter:has(#cat-nonfiction:checked) .cat:not(.cat-nonfiction),
+  .shelf-filter:has(#cat-children:checked)   .cat:not(.cat-children),
+  .shelf-filter:has(#cat-reference:checked)  .cat:not(.cat-reference) {
+    display: none;
+  }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space);
+    align-items: start;
+  }
+
+  /* Container query: the card re-flows based on ITS width, not the screen's */
+  .cat { container-type: inline-size; }
+
+  .cat-inner {
+    display: grid;
+    gap: 1rem;
+    padding: var(--space);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-block-start: 0.5rem solid var(--c);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .cat-inner h2 { font-size: var(--step-2); }
+  .cat-inner .where { color: var(--muted); font-size: var(--step--1); margin-block-start: 0.5rem; }
+
+  .titles {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.8rem;
+  }
+  .titles li {
+    display: grid;
+    padding-inline-start: 0.9rem;
+    border-inline-start: 0.3rem solid color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  .titles strong { font-family: var(--font-display); font-weight: 650; }
+  .titles span { color: var(--muted); font-size: var(--step--1); }
+
+  @container (min-width: 32rem) {
+    .cat-inner { grid-template-columns: 1fr 1.4fr; align-items: start; }
+  }
+
+  /* COLLECTIONS: responsive. Filter pills scroll sideways on small phones. */
+  @media (max-width: 40rem) {
+    .filter-bar {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-block-end: 0.5rem;
+    }
+    .filter-bar label { white-space: nowrap; }
+  }
+
+  /* ================================================================
+     PAGE: MEMBERSHIP (membership.html)       Owner: Member 2
+     ================================================================ */
+  .plans {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space);
+    align-items: stretch;
+  }
+
+  .plan {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    transition: opacity 0.2s;
+  }
+  .plan .price {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .plan .price small {
+    font-family: var(--font-body);
+    font-size: var(--step--1);
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .plan dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem 1rem;
+    font-size: var(--step--1);
+  }
+  .plan dt { color: var(--muted); }
+  .plan dd { font-weight: 600; }
+  .plan .tag { position: absolute; inset-block-start: -0.8rem; inset-inline-end: 1rem; }
+
+  .plan.featured {
+    border-color: var(--brand);
+    outline: 2px solid var(--brand);
+  }
+
+  /* Dim the other plans while one is hovered */
+  .plans:has(.plan:hover) .plan:not(:hover) { opacity: 0.78; }
+
+  /* MEMBERSHIP: responsive. Plans stack on tablets and phones. */
+  @media (max-width: 56rem) {
+    .plans { grid-template-columns: 1fr; }
+    .plan .tag { inset-block-start: 1rem; }
+  }
+
+  /* ================================================================
+     PAGE: DIGITAL SERVICES (services.html)   Owner: Member 3
+     Bento grid: tiles of different sizes on a 6-column grid.
+     ================================================================ */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space);
+  }
+
+  .svc {
+    --c: var(--spine-green);
+    grid-column: span 3;
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    border-block-start: 0.45rem solid var(--c);
+  }
+  .svc .when {
+    justify-self: start;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--c) 20%, transparent);
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+  .svc p { color: var(--muted); }
+  .svc .steps { --c: var(--brand); --on: var(--on-brand); font-size: var(--step--1); }
+
+  .svc-catalogue { grid-column: span 4; --c: var(--spine-blue); }
+  .svc-wifi      { grid-column: span 2; --c: var(--spine-gold); }
+  .svc-study     { grid-column: span 3; --c: var(--spine-rose); }
+  .svc-ebooks    { grid-column: span 3; --c: var(--spine-teal); }
+  .svc-print     { grid-column: span 6; --c: var(--spine-green); }
+
+  /* SERVICES: responsive. Every tile becomes full width on tablets and phones. */
+  @media (max-width: 48rem) {
+    .bento { grid-template-columns: 1fr; }
+    .bento > .svc { grid-column: 1 / -1; }
+  }
+
+  /* ================================================================
+     PAGE: CONTACT (contact.html)             Owner: Member 4
+     ================================================================ */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+  }
+
+  .contact-list {
+    display: grid;
+    gap: 1.1rem;
+    font-style: normal;
+  }
+  .contact-list dt { color: var(--muted); font-size: var(--step--1); }
+  .contact-list dd { font-weight: 600; font-size: var(--step-1); font-family: var(--font-display); }
+
+  .form {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .field label { font-weight: 600; }
+  .field :is(input, textarea) {
+    inline-size: 100%;
+    padding: 0.8rem 1rem;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-s);
+    background: var(--paper);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field :is(input, textarea):focus-visible {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 25%, transparent);
+  }
+  .field textarea {
+    field-sizing: content;   /* grows as you type, where supported */
+    min-block-size: 7rem;
+    resize: vertical;
+  }
+  /* Show validation only after the person has interacted with the field */
+  .field :is(input, textarea):user-invalid { border-color: var(--danger); }
+  .field:has(:user-invalid)::after {
+    content: "Please check this field before sending.";
+    color: var(--danger);
+    font-size: var(--step--1);
+  }
+
+  .form-note { color: var(--muted); font-size: var(--step--1); }
+
+  /* CONTACT: responsive. Details and form stack on tablets and phones. */
+  @media (max-width: 48rem) {
+    .contact-grid { grid-template-columns: 1fr; }
+  }
+}
+
+/* Print: clean black-on-white */
+@media print {
+  .site-header, .site-footer, .skip { display: none; }
+  body { background: #fff; color: #000; }
+}
